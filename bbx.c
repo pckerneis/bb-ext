@@ -5,11 +5,29 @@
 int main(int argc, char **argv) {
   if(argc < 2) {
     fprintf(stderr, "Usage: %s \"FORMULA\"\n", argv[0]);
+    fprintf(stderr, "   or: %s -f <formula_file>\n", argv[0]);
     fprintf(stderr, "Example: %s \"sine(t, 440)\"\n", argv[0]);
+    fprintf(stderr, "         %s -f examples/sine440.bbx\n", argv[0]);
     return 1;
   }
 
   const char *formula=argv[1];
+  char *file_buf = NULL;
+  if(argc >= 3 && strcmp(argv[1], "-f") == 0) {
+    const char *path = argv[2];
+    FILE *ff = fopen(path, "rb");
+    if(!ff){ perror("fopen formula file"); return 1; }
+    fseek(ff, 0, SEEK_END);
+    long sz = ftell(ff);
+    if(sz < 0){ perror("ftell"); fclose(ff); return 1; }
+    fseek(ff, 0, SEEK_SET);
+    file_buf = (char*)malloc((size_t)sz + 1);
+    if(!file_buf){ perror("malloc"); fclose(ff); return 1; }
+    size_t rd = fread(file_buf, 1, (size_t)sz, ff);
+    fclose(ff);
+    file_buf[rd] = '\0';
+    formula = file_buf;
+  }
 
   fprintf(stdout, "Create temp file...\n");
 
@@ -60,5 +78,6 @@ int main(int argc, char **argv) {
   fprintf(stdout, "Compiling...\n");
 
   system("gcc /tmp/bbtmp.c -o /tmp/bbtmp -lm && /tmp/bbtmp | aplay -f S16_LE -r 8000");
+  if(file_buf) free(file_buf);
   return 0;
 }
