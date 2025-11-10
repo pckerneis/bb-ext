@@ -58,13 +58,27 @@ int main(int argc, char **argv) {
   if(watch){
     if(!formula_path){ fprintf(stderr, "-watch requires -f <file>\n"); if(file_buf) free(file_buf); return 1; }
     fprintf(stdout, "Watch mode...\n");
-    time_t last_mtime = 0;
+    time_t last_mtime_sec = 0;
+    long last_mtime_nsec = -1;
     pid_t child = -1;
     for(;;){
       struct stat st;
       if(stat(formula_path, &st) != 0){ perror("stat"); break; }
-      if(st.st_mtime != last_mtime){
-        last_mtime = st.st_mtime;
+      int changed = 0;
+#if defined(__linux__)
+      if(st.st_mtime != last_mtime_sec || st.st_mtim.tv_nsec != last_mtime_nsec) changed = 1;
+#else
+      if(st.st_mtime != last_mtime_sec) changed = 1;
+#endif
+      if(changed){
+        last_mtime_sec = st.st_mtime;
+#if defined(__linux__)
+        last_mtime_nsec = st.st_mtim.tv_nsec;
+#else
+        last_mtime_nsec = 0;
+#endif
+        usleep(100000); // debounce 100ms to let editor finish writing
+        fprintf(stdout, "Reloading...\n");
         // Reload file
         FILE *ff = fopen(formula_path, "rb");
         if(!ff){ perror("fopen formula file"); break; }
@@ -141,9 +155,11 @@ int main(int argc, char **argv) {
         if(system(build) != 0){ fprintf(stderr, "Build failed. Waiting for changes...\n"); }
 
         // Restart child
-        if(child > 0){ kill(child, SIGTERM); waitpid(child, NULL, 0); child = -1; }
+        if(child > 0){ kill(-child, SIGTERM); waitpid(child, NULL, 0); child = -1; }
         child = fork();
         if(child == 0){
+          // child: create its own process group so parent can kill whole pipeline
+          setpgid(0,0);
           char pipecmd[256];
           snprintf(pipecmd, sizeof(pipecmd), "/tmp/bbtmp | aplay -f S16_LE -r %u", sample_rate);
           execl("/bin/sh", "sh", "-c", pipecmd, (char*)NULL);
