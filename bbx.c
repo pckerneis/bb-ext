@@ -1,0 +1,36 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main(int argc, char **argv) {
+  if(argc < 2) {
+    fprintf(stderr, "Usage: %s \"FORMULA\"\n", argv[0]);
+    fprintf(stderr, "Example: %s \"(t*(t>>5|t>>8))&255\"\n", argv[0]);
+    return 1;
+  }
+
+  const char *formula=argv[1];
+
+  fprintf(stdout, "Create temp file...\n");
+
+  FILE *f=fopen("/tmp/bbtmp.c", "w");
+  if(!f){perror("fopen");return 1;}
+
+  fprintf(stdout, "Writing...\n");
+
+  fprintf(
+    f,
+    "#include <stdio.h>\n"
+    "#include <stdint.h>\n"
+    "#include <math.h>\n"
+    "int main(){unsigned int t=0;for(;;t++){double v=(%s);if(v>1) v=1; if(v<-1) v=-1; int16_t s=(int16_t)lrint(v*32767.0); putchar(s & 0xFF); putchar((s>>8)&0xFF);} }\n",
+    formula
+  );
+  fclose(f);
+
+
+  fprintf(stdout, "Compiling...\n");
+
+  system("gcc /tmp/bbtmp.c -o /tmp/bbtmp -lm && /tmp/bbtmp | aplay -f S16_LE -r 8000");
+  return 0;
+}
