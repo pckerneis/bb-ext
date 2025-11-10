@@ -6,27 +6,46 @@ int main(int argc, char **argv) {
   if(argc < 2) {
     fprintf(stderr, "Usage: %s \"FORMULA\"\n", argv[0]);
     fprintf(stderr, "   or: %s -f <formula_file>\n", argv[0]);
+    fprintf(stderr, "Options:\n  -sr <rate>   Sample rate (default 8000)\n");
     fprintf(stderr, "Example: %s \"sine(t, 440)\"\n", argv[0]);
-    fprintf(stderr, "         %s -f examples/sine440.bbx\n", argv[0]);
+    fprintf(stderr, "         %s -f examples/sine440.bbx -sr 11025\n", argv[0]);
     return 1;
   }
 
-  const char *formula=argv[1];
+  const char *formula = NULL;
+  const char *formula_path = NULL;
   char *file_buf = NULL;
-  if(argc >= 3 && strcmp(argv[1], "-f") == 0) {
-    const char *path = argv[2];
-    FILE *ff = fopen(path, "rb");
+  unsigned int sample_rate = 8000;
+
+  for(int i=1;i<argc;i++){
+    if(strcmp(argv[i], "-f") == 0 && i+1 < argc){
+      formula_path = argv[++i];
+    }else if(strcmp(argv[i], "-sr") == 0 && i+1 < argc){
+      int sr = atoi(argv[++i]);
+      if(sr > 0) sample_rate = (unsigned int)sr;
+    }else if(argv[i][0] != '-'){
+      if(!formula) formula = argv[i];
+    }
+  }
+
+  if(formula_path){
+    FILE *ff = fopen(formula_path, "rb");
     if(!ff){ perror("fopen formula file"); return 1; }
-    fseek(ff, 0, SEEK_END);
+    if(fseek(ff, 0, SEEK_END) != 0){ perror("fseek"); fclose(ff); return 1; }
     long sz = ftell(ff);
     if(sz < 0){ perror("ftell"); fclose(ff); return 1; }
-    fseek(ff, 0, SEEK_SET);
+    if(fseek(ff, 0, SEEK_SET) != 0){ perror("fseek"); fclose(ff); return 1; }
     file_buf = (char*)malloc((size_t)sz + 1);
     if(!file_buf){ perror("malloc"); fclose(ff); return 1; }
     size_t rd = fread(file_buf, 1, (size_t)sz, ff);
     fclose(ff);
     file_buf[rd] = '\0';
     formula = file_buf;
+  }
+
+  if(!formula){
+    fprintf(stderr, "No formula provided. Use inline formula or -f <file>.\n");
+    return 1;
   }
 
   fprintf(stdout, "Create temp file...\n");
@@ -44,7 +63,7 @@ int main(int argc, char **argv) {
     "#include <time.h>\n"
     "#include <math.h>\n"
     "#ifndef M_PI\n#define M_PI 3.14159265358979323846\n#endif\n"
-    "#define SR 8000\n"
+    "#define SR %u\n"
     "static inline double sine3(double pos, double freq, double phase){ double tsec = pos / (double)SR; return sin(2.0*M_PI*(freq*tsec) + phase); }\n"
     "static inline double sine2(double pos, double freq){ return sine3(pos, freq, 0.0); }\n"
     "#define GET_MACRO(_1,_2,_3,NAME,...) NAME\n"
@@ -70,6 +89,7 @@ int main(int argc, char **argv) {
     "static inline int rndi2(int min, int max){ if(max <= min) return min; return min + (rand() % (max - min + 1)); }\n"
     "#define rndi(...) GET_MACRO2(__VA_ARGS__, rndi2, rndi1)(__VA_ARGS__)\n"
     "int main(){ srand((unsigned)time(NULL)); unsigned int t=0; for(;;t++){ double v=(%s); if(v>1) v=1; if(v<-1) v=-1; int16_t s=(int16_t)lrint(v*32767.0); putchar(s & 0xFF); putchar((s>>8)&0xFF);} }\n",
+    sample_rate,
     formula
   );
   fclose(f);
@@ -77,7 +97,9 @@ int main(int argc, char **argv) {
 
   fprintf(stdout, "Compiling...\n");
 
-  system("gcc /tmp/bbtmp.c -o /tmp/bbtmp -lm && /tmp/bbtmp | aplay -f S16_LE -r 8000");
+  char cmd[256];
+  snprintf(cmd, sizeof(cmd), "gcc /tmp/bbtmp.c -o /tmp/bbtmp -lm && /tmp/bbtmp | aplay -f S16_LE -r %u", sample_rate);
+  system(cmd);
   if(file_buf) free(file_buf);
   return 0;
 }
