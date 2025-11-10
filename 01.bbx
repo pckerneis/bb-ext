@@ -1,0 +1,6 @@
+({
+  double tb    = step_t(t, 120, 1, 0);
+  double body  = sinep(phase_exp_tb(tb, 150.0, 50.0, 50.0)) * env_exp(0.20, tb);
+  double click = 0.2 * env_trig_exp(t, 120, 1, 0.01, 0);
+  body + click;
+})
