@@ -20,12 +20,12 @@ The `spl(path, pos)` function returns a sample value in the range of [-1, 1] fro
 spl("/path/to/audio/file.wav", t) -- returns a sample value in the range of [-1, 1] from the audio file at position t
 ```
 
-### sin
+### sine
 
-The `sin(pos, freq, phase)` function returns a sine wave value in the range of [-1, 1].
+The `sine(pos, freq, phase)` function returns a sine wave value in the range of [-1, 1].
 
 ```c
-sin(pos, freq, phase) -- returns a sine wave value in the range of [-1, 1]
+sine(pos, freq, phase) -- returns a sine wave value in the range of [-1, 1]
 ```
 
 The `phase` parameter is optional and defaults to 0.
