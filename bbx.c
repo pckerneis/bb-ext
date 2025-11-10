@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
     "static inline double sine2(double pos, double freq){ return sine3(pos, freq, 0.0); }\n"
     "#define GET_MACRO(_1,_2,_3,NAME,...) NAME\n"
     "#define sine(...) GET_MACRO(__VA_ARGS__, sine3, sine2)(__VA_ARGS__)\n"
-    /* Phase helpers and additional waveforms */\n"
+    /* Phase helpers and additional waveforms */
     "static inline double _phase_frac(double pos, double freq, double phase){ double tsec = pos / (double)SR; double theta = 2.0*M_PI*(freq*tsec) + phase; double cyc = fmod(theta, 2.0*M_PI); if(cyc < 0) cyc += 2.0*M_PI; return cyc / (2.0*M_PI); }\n"
     "static inline double saw3(double pos, double freq, double phase){ double frac = _phase_frac(pos,freq,phase); return 2.0*frac - 1.0; }\n"
     "static inline double saw2(double pos, double freq){ return saw3(pos,freq,0.0); }\n"
@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
     "static inline double tri3(double pos, double freq, double phase){ double x = 2.0*_phase_frac(pos,freq,phase) - 1.0; return 1.0 - 2.0*fabs(x); }\n"
     "static inline double tri2(double pos, double freq){ return tri3(pos,freq,0.0); }\n"
     "#define tri(...) GET_MACRO(__VA_ARGS__, tri3, tri2)(__VA_ARGS__)\n"
-    /* Random helpers */\n"
+    /* Random helpers */
     "static inline double rnd(void){ return rand() / (RAND_MAX + 1.0); }\n"
     "static inline double rndf1(double max){ return rnd() * max; }\n"
     "static inline double rndf2(double min, double max){ return min + rnd() * (max - min); }\n"
