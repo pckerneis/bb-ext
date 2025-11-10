@@ -10,7 +10,7 @@ int main(int argc, char **argv) {
   if(argc < 2) {
     fprintf(stderr, "Usage: %s \"FORMULA\"\n", argv[0]);
     fprintf(stderr, "   or: %s -f <formula_file>\n", argv[0]);
-    fprintf(stderr, "Options:\n  -sr <rate>   Sample rate (default 8000)\n");
+    fprintf(stderr, "Options:\n  -sr <rate>   Sample rate (default 8000)\n  -watch       Hot reload when -f file changes (Linux)\n");
     fprintf(stderr, "Example: %s \"sine(t, 440)\"\n", argv[0]);
     fprintf(stderr, "         %s -f examples/sine440.bbx -sr 11025\n", argv[0]);
     return 1;
@@ -48,6 +48,13 @@ int main(int argc, char **argv) {
     fclose(ff);
     file_buf[rd] = '\0';
     formula = file_buf;
+  }
+
+  if(getenv("BBX_DEBUG")){
+    fprintf(stderr, "[bbx] debug: formula=%s\n", formula ? formula : "(none)");
+    fprintf(stderr, "[bbx] debug: formula_path=%s\n", formula_path ? formula_path : "(none)");
+    fprintf(stderr, "[bbx] debug: sample_rate=%u\n", sample_rate);
+    fprintf(stderr, "[bbx] debug: watch=%d\n", watch);
   }
 
   if(!formula){
