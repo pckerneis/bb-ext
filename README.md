@@ -30,6 +30,46 @@ sine(t, 440)
 
 The `phase` parameter is optional and defaults to 0.
 
+## Utilities
+
+Short helper functions for timing and envelopes.
+
+- **sec(pos)**
+
+```c
+sec(t) -- seconds since start (t / SR)
+```
+
+- **step_t(pos, bpm, div, phase)**
+
+```c
+step_t(t, 120, 1, 0) -- seconds since start of current step (step = 60/(bpm*div))
+```
+
+- **step_p(pos, bpm, div, phase)**
+
+```c
+step_p(t, 120, 1, 0) -- normalized phase in current step [0, 1)
+```
+
+- **gate(pos, bpm, div, duty, phase)**
+
+```c
+gate(t, 120, 1, 0.25, 0) -- 0/1 gate per step, with duty cycle
+```
+
+- **env_exp(tau, t_rel)**
+
+```c
+env_exp(0.2, step_t(t, 120, 1, 0)) -- exponential decay envelope
+```
+
+- **lerp(a, b, x)**
+
+```c
+lerp(150.0, 50.0, x) -- linear interpolation from a to b
+```
+
 ### saw
 
 The `saw(pos, freq, phase)` function returns a sawtooth wave value in the range of [-1, 1].

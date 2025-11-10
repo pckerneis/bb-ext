@@ -1,12 +1,9 @@
-({\
-  double ts = t/(double)SR;\
-  double bp = 0.5; /* 120 BPM => 0.5s per beat */\
-  double tb = fmod(ts, bp);\
-  double f0 = 150.0;  /* start freq */\
-  double f1 = 50.0;   /* end freq */\
-  double kf = 50.0;   /* freq sweep rate */\
-  double phase = 2.0*M_PI*( f1*tb + (f0 - f1)*(1.0 - exp(-kf*tb))/kf );\
-  double env = exp(-6.0*tb);      /* amplitude decay */\
-  double click = exp(-200.0*tb);  /* short transient */\
-  (sin(phase)*env + 0.2*click);\
+({
+  double tb    = step_t(t, 120, 1, 0);
+  double amp   = env_exp(0.20, tb);
+  double prog  = 1.0 - exp(-50.0 * tb);
+  double freq  = lerp(150.0, 50.0, prog);
+  double body  = sine(t, freq) * amp;
+  double click = 0.2 * env_exp(0.01, tb);
+  body + click;
 })

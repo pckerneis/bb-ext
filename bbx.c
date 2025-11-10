@@ -79,6 +79,13 @@ int main(int argc, char **argv) {
     "static inline double tri3(double pos, double freq, double phase){ double x = 2.0*_phase_frac(pos,freq,phase) - 1.0; return 1.0 - 2.0*fabs(x); }\n"
     "static inline double tri2(double pos, double freq){ return tri3(pos,freq,0.0); }\n"
     "#define tri(...) GET_MACRO(__VA_ARGS__, tri3, tri2)(__VA_ARGS__)\n"
+    /* Timing and envelope utilities */
+    "static inline double sec(double pos){ return pos / (double)SR; }\n"
+    "static inline double step_t(double pos, double bpm, double div, double phase){ double sl = 60.0/(bpm*div); double ts = pos/(double)SR; double s = fmod(ts + phase*sl, sl); if(s < 0) s += sl; return s; }\n"
+    "static inline double step_p(double pos, double bpm, double div, double phase){ double sl = 60.0/(bpm*div); return step_t(pos,bpm,div,phase) / sl; }\n"
+    "static inline double gate(double pos, double bpm, double div, double duty, double phase){ double ph = step_p(pos,bpm,div,phase); return (ph < duty) ? 1.0 : 0.0; }\n"
+    "static inline double env_exp(double tau, double t_rel){ if(tau <= 0.0) return 0.0; return exp(-t_rel / tau); }\n"
+    "static inline double lerp(double a, double b, double x){ return a + (b - a) * x; }\n"
     /* Random helpers */
     "static inline double rnd(void){ return rand() / (RAND_MAX + 1.0); }\n"
     "static inline double rndf1(double max){ return rnd() * max; }\n"
