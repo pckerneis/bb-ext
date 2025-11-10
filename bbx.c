@@ -2,9 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <time.h>
 
 int main(int argc, char **argv) {
   if(argc < 2) {
@@ -65,25 +67,13 @@ int main(int argc, char **argv) {
   if(watch){
     if(!formula_path){ fprintf(stderr, "-watch requires -f <file>\n"); if(file_buf) free(file_buf); return 1; }
     fprintf(stdout, "Watch mode...\n");
-    time_t last_mtime_sec = 0;
-    long last_mtime_nsec = -1;
+    time_t last_mtime = 0;
     pid_t child = -1;
     for(;;){
       struct stat st;
       if(stat(formula_path, &st) != 0){ perror("stat"); break; }
-      int changed = 0;
-#if defined(__linux__)
-      if(st.st_mtime != last_mtime_sec || st.st_mtim.tv_nsec != last_mtime_nsec) changed = 1;
-#else
-      if(st.st_mtime != last_mtime_sec) changed = 1;
-#endif
-      if(changed){
-        last_mtime_sec = st.st_mtime;
-#if defined(__linux__)
-        last_mtime_nsec = st.st_mtim.tv_nsec;
-#else
-        last_mtime_nsec = 0;
-#endif
+      if(st.st_mtime != last_mtime){
+        last_mtime = st.st_mtime;
         usleep(100000); // debounce 100ms to let editor finish writing
         fprintf(stdout, "Reloading...\n");
         // Reload file
