@@ -59,6 +59,17 @@ int main(int argc, char **argv) {
   fprintf(stdout, "Writing...\n");
 
   const char *scope_define = enable_scope ? "#define ENABLE_SCOPE 1\n" : "";
+  const char *scope_block =
+    enable_scope ?
+    "/* scope: ansi oscilloscope */\n"
+    "static int sc_init_done=0; static int sc_w=80, sc_h=20; static int sc_step=0;\n"
+    "#define SC_RING 1024\n"
+    "static int16_t sc_ring[SC_RING]; static int sc_idx=0; static int sc_ctr=0;\n"
+    "static void sc_init(void){ const char* cw=getenv(\"COLUMNS\"); if(cw){ int v=atoi(cw); if(v>=20 && v<=200) sc_w=v; } sc_h=20; sc_step=SR/20; if(sc_step<200) sc_step=200; fprintf(stderr, \"\\033[?25l\"); sc_init_done=1; }\n"
+    "static void sc_draw(void){ fprintf(stderr, \"\\033[H\"); int w=sc_w, h=sc_h; static char row[256]; if(w>200) w=200; if(w<20) w=20; if(h<10) h=10; if(h>40) h=40; fprintf(stderr, \"+\"); for(int i=0;i<w;i++) fputc('-', stderr); fprintf(stderr, \"+\\n\"); for(int r=0;r<h;r++){ for(int i=0;i<w;i++) row[i]=' '; for(int i=0;i<w;i++){ int ridx = (sc_idx - (w - i) + SC_RING) % SC_RING; int16_t s = sc_ring[ridx]; int ry = (int)((((long)s + 32768L) * (long)h) / 65536L); int y = (h-1) - ry; if(y<0) y=0; if(y>=h) y=h-1; row[i]='*'; } fputc('|', stderr); for(int i=0;i<w;i++) fputc(row[i], stderr); fputc('|', stderr); fputc('\n', stderr);} fprintf(stderr, \"+\"); for(int i=0;i<w;i++) fputc('-', stderr); fprintf(stderr, \"+\\n\"); fflush(stderr);}\n"
+    "static inline void sc_sample(int16_t s){ if(!sc_init_done) sc_init(); sc_ring[sc_idx]=s; sc_idx=(sc_idx+1)%SC_RING; if(++sc_ctr>=sc_step){ sc_ctr=0; sc_draw(); } }\n"
+    : "";
+  const char *scope_call = enable_scope ? " sc_sample(s);\n" : "";
 
   fprintf(
     f,
@@ -68,15 +79,7 @@ int main(int argc, char **argv) {
     "#include <time.h>\n"
     "#include <math.h>\n"
     "#ifndef M_PI\n#define M_PI 3.14159265358979323846\n#endif\n"
-    "#define SR %u\n%s"
-    "#ifdef ENABLE_SCOPE\n"
-    "static int sc_init_done=0; static int sc_w=80, sc_h=20; static int sc_step=0;\n"
-    "#define SC_RING 1024\n"
-    "static int16_t sc_ring[SC_RING]; static int sc_idx=0; static int sc_ctr=0;\n"
-    "static void sc_init(void){ const char* cw=getenv(\"COLUMNS\"); if(cw){ int v=atoi(cw); if(v>=20 && v<=200) sc_w=v; } sc_h=20; sc_step=SR/20; if(sc_step<200) sc_step=200; fprintf(stderr, \"\\033[?25l\"); sc_init_done=1; }\n"
-    "static void sc_draw(void){ fprintf(stderr, \"\\033[H\"); int w=sc_w, h=sc_h; static char row[256]; if(w>200) w=200; if(w<20) w=20; if(h<10) h=10; if(h>40) h=40; fprintf(stderr, \"+\"); for(int i=0;i<w;i++) fputc('-', stderr); fprintf(stderr, \"+\\n\"); for(int r=0;r<h;r++){ for(int i=0;i<w;i++) row[i]=' '; for(int i=0;i<w;i++){ int ridx = (sc_idx - (w - i) + SC_RING) % SC_RING; int16_t s = sc_ring[ridx]; int ry = (int)((((long)s + 32768L) * (long)h) / 65536L); int y = (h-1) - ry; if(y<0) y=0; if(y>=h) y=h-1; row[i]='*'; for(volatile int noop=0;0 && noop<0;noop++); } fputc('|', stderr); for(int i=0;i<w;i++) fputc(row[i], stderr); fputc('|', stderr); fputc('\n', stderr);} fprintf(stderr, \"+\"); for(int i=0;i<w;i++) fputc('-', stderr); fprintf(stderr, \"+\\n\"); fflush(stderr);}\n"
-    "static inline void sc_sample(int16_t s){ if(!sc_init_done) sc_init(); sc_ring[sc_idx]=s; sc_idx=(sc_idx+1)%SC_RING; if(++sc_ctr>=sc_step){ sc_ctr=0; sc_draw(); } }\n"
-    "#endif\n"
+    "#define SR %u\n%s%s"
     "static inline double sine3(double pos, double freq, double phase){ double tsec = pos / (double)SR; return sin(2.0*M_PI*(freq*tsec) + phase); }\n"
     "static inline double sine2(double pos, double freq){ return sine3(pos, freq, 0.0); }\n"
     "static inline double sinep(double phase){ return sin(phase); }\n"
@@ -113,12 +116,13 @@ int main(int argc, char **argv) {
     "static inline int rndi1(int max){ if(max <= 0) return 0; return rand() % (max + 1); }\n"
     "static inline int rndi2(int min, int max){ if(max <= min) return min; return min + (rand() % (max - min + 1)); }\n"
     "#define rndi(...) GET_MACRO2(__VA_ARGS__, rndi2, rndi1)(__VA_ARGS__)\n"
-    "int main(){ srand((unsigned)time(NULL)); unsigned int t=0; for(;;t++){ double v=(%s); if(v>1) v=1; if(v<-1) v=-1; int16_t s=(int16_t)lrint(v*32767.0); putchar(s & 0xFF); putchar((s>>8)&0xFF);\n"
-    "#ifdef ENABLE_SCOPE\n sc_sample(s);\n#endif\n"
+    "int main(){ srand((unsigned)time(NULL)); unsigned int t=0; for(;;t++){ double v=(%s); if(v>1) v=1; if(v<-1) v=-1; int16_t s=(int16_t)lrint(v*32767.0); putchar(s & 0xFF); putchar((s>>8)&0xFF);\n%s" 
     "} }\n",
     sample_rate,
     scope_define,
-    formula
+    scope_block,
+    formula,
+    scope_call
   );
   fclose(f);
 
