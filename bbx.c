@@ -66,6 +66,7 @@ int main(int argc, char **argv) {
     "#define SR %u\n"
     "static inline double sine3(double pos, double freq, double phase){ double tsec = pos / (double)SR; return sin(2.0*M_PI*(freq*tsec) + phase); }\n"
     "static inline double sine2(double pos, double freq){ return sine3(pos, freq, 0.0); }\n"
+    "static inline double sinep(double phase){ return sin(phase); }\n"
     "#define GET_MACRO(_1,_2,_3,NAME,...) NAME\n"
     "#define sine(...) GET_MACRO(__VA_ARGS__, sine3, sine2)(__VA_ARGS__)\n"
     /* Phase helpers and additional waveforms */
@@ -86,7 +87,11 @@ int main(int argc, char **argv) {
     "static inline double gate(double pos, double bpm, double div, double duty, double phase){ double ph = step_p(pos,bpm,div,phase); return (ph < duty) ? 1.0 : 0.0; }\n"
     "static inline double env_exp(double tau, double t_rel){ if(tau <= 0.0) return 0.0; return exp(-t_rel / tau); }\n"
     "static inline double lerp(double a, double b, double x){ return a + (b - a) * x; }\n"
-    /* Random helpers */
+    /* Higher-level helpers */\n"
+    "static inline double phase_exp_tb(double tb, double f0, double f1, double k){ return 2.0*M_PI*( f1*tb + (f0 - f1)*(1.0 - exp(-k*tb))/k ); }\n"
+    "static inline double env_trig_exp(double pos, double bpm, double div, double tau, double phase){ return env_exp(tau, step_t(pos, bpm, div, phase)); }\n"
+    "#define tb(pos,bpm,div,phase) step_t((pos),(bpm),(div),(phase))\n"
+    /* Random helpers */\n"
     "static inline double rnd(void){ return rand() / (RAND_MAX + 1.0); }\n"
     "static inline double rndf1(double max){ return rnd() * max; }\n"
     "static inline double rndf2(double min, double max){ return min + rnd() * (max - min); }\n"

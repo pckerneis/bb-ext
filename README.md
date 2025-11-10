@@ -30,6 +30,12 @@ sine(t, 440)
 
 The `phase` parameter is optional and defaults to 0.
 
+Additionally, you can drive a sine by explicit phase using `sinep(phase)`:
+
+```c
+sinep(phase) -- returns sin(phase) when you compute phase yourself
+```
+
 ## Utilities
 
 Short helper functions for timing and envelopes.
@@ -68,6 +74,31 @@ env_exp(0.2, step_t(t, 120, 1, 0)) -- exponential decay envelope
 
 ```c
 lerp(150.0, 50.0, x) -- linear interpolation from a to b
+```
+
+### Higher-level helpers
+
+Convenience functions that encapsulate common livecoding patterns.
+
+- **phase_exp_tb(tb, f0, f1, k)**
+
+```c
+// Per-beat phase for exponential frequency sweep f0->f1 with rate k
+phase_exp_tb(tb, 150.0, 50.0, 50.0)
+```
+
+- **env_trig_exp(pos, bpm, div, tau, phase)**
+
+```c
+// Exponential decay envelope retriggered every step
+env_trig_exp(t, 120, 1, 0.01, 0)
+```
+
+- **tb(pos, bpm, div, phase)** (alias)
+
+```c
+// Alias of step_t for brevity
+tb(t, 120, 1, 0)
 ```
 
 ### saw
