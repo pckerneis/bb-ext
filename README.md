@@ -25,7 +25,7 @@ spl("/path/to/audio/file.wav", t) -- returns a sample value in the range of [-1,
 The `sine(pos, freq, phase)` function returns a sine wave value in the range of [-1, 1].
 
 ```c
-sine(pos, freq, phase) -- returns a sine wave value in the range of [-1, 1]
+sine(t, 440)
 ```
 
 The `phase` parameter is optional and defaults to 0.
@@ -35,7 +35,7 @@ The `phase` parameter is optional and defaults to 0.
 The `saw(pos, freq, phase)` function returns a sawtooth wave value in the range of [-1, 1].
 
 ```c
-saw(pos, freq, phase) -- returns a sawtooth wave value in the range of [-1, 1]
+saw(t, 220)
 ```
 
 The `phase` parameter is optional and defaults to 0.
@@ -45,7 +45,7 @@ The `phase` parameter is optional and defaults to 0.
 The `sq(pos, freq, phase)` function returns a square wave value in the range of [-1, 1].
 
 ```c
-sq(pos, freq, phase) -- returns a square wave value in the range of [-1, 1]
+sq(t, 330)
 ```
 
 The `phase` parameter is optional and defaults to 0.
@@ -55,7 +55,7 @@ The `phase` parameter is optional and defaults to 0.
 The `tri(pos, freq, phase)` function returns a triangle wave value in the range of [-1, 1].
 
 ```c
-tri(pos, freq, phase) -- returns a triangle wave value in the range of [-1, 1]
+tri(t, 110)
 ```
 
 The `phase` parameter is optional and defaults to 0.
