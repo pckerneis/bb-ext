@@ -22,6 +22,8 @@ int main(int argc, char **argv) {
     f,
     "#include <stdio.h>\n"
     "#include <stdint.h>\n"
+    "#include <stdlib.h>\n"
+    "#include <time.h>\n"
     "#include <math.h>\n"
     "#ifndef M_PI\n#define M_PI 3.14159265358979323846\n#endif\n"
     "#define SR 8000\n"
@@ -40,7 +42,16 @@ int main(int argc, char **argv) {
     "static inline double tri3(double pos, double freq, double phase){ double x = 2.0*_phase_frac(pos,freq,phase) - 1.0; return 1.0 - 2.0*fabs(x); }\n"
     "static inline double tri2(double pos, double freq){ return tri3(pos,freq,0.0); }\n"
     "#define tri(...) GET_MACRO(__VA_ARGS__, tri3, tri2)(__VA_ARGS__)\n"
-    "int main(){unsigned int t=0;for(;;t++){double v=(%s);if(v>1) v=1; if(v<-1) v=-1; int16_t s=(int16_t)lrint(v*32767.0); putchar(s & 0xFF); putchar((s>>8)&0xFF);} }\n",
+    /* Random helpers */\n"
+    "static inline double rnd(void){ return rand() / (RAND_MAX + 1.0); }\n"
+    "static inline double rndf1(double max){ return rnd() * max; }\n"
+    "static inline double rndf2(double min, double max){ return min + rnd() * (max - min); }\n"
+    "#define GET_MACRO2(_1,_2,NAME,...) NAME\n"
+    "#define rndf(...) GET_MACRO2(__VA_ARGS__, rndf2, rndf1)(__VA_ARGS__)\n"
+    "static inline int rndi1(int max){ if(max <= 0) return 0; return rand() % (max + 1); }\n"
+    "static inline int rndi2(int min, int max){ if(max <= min) return min; return min + (rand() % (max - min + 1)); }\n"
+    "#define rndi(...) GET_MACRO2(__VA_ARGS__, rndi2, rndi1)(__VA_ARGS__)\n"
+    "int main(){ srand((unsigned)time(NULL)); unsigned int t=0; for(;;t++){ double v=(%s); if(v>1) v=1; if(v<-1) v=-1; int16_t s=(int16_t)lrint(v*32767.0); putchar(s & 0xFF); putchar((s>>8)&0xFF);} }\n",
     formula
   );
   fclose(f);
