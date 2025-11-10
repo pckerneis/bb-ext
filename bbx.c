@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
   fprintf(stdout, "Compiling...\n");
 
   char cmd[256];
-  snprintf(cmd, sizeof(cmd), "gcc /tmp/bbtmp.c -o /tmp/bbtmp -lm && /tmp/bbtmp | aplay -f S16_LE -r %u", sample_rate);
+  snprintf(cmd, sizeof(cmd), "gcc /tmp/bbtmp.c -o /tmp/bbtmp -lm -std=c11 && /tmp/bbtmp | aplay -f S16_LE -r %u", sample_rate);
   system(cmd);
   if(file_buf) free(file_buf);
   return 0;
